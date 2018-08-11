@@ -18,6 +18,12 @@ const puppeteer = require('puppeteer');
 
 const baseUrl = '__URL__';
 
+const textMatch = function(expected, actual) {
+    if (expected !== actual) {
+        console.warn("Text not match", expected, actual);
+    }
+};
+
 (async () => {
     const browser = await puppeteer.launch({
         args: [
@@ -30,6 +36,7 @@ const baseUrl = '__URL__';
 
     __SCRIPTS__
 
+    console.log(page.length);
     browser.close();
 })();
 `
@@ -79,6 +86,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         target = "#" + match[1];
                     }
                     scripts += "\t" + "await page.type('" + target + "', '" + cmd.value + "\');" + "\n";
+                }
+                if (cmd.command === "verifyText") {
+                    let target = cmd.target;
+                    let xml = `
+                    let text = await page.evaluate(() => {
+        const xpath = "${target}";
+        return document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue.innerText;
+    });\n`
+                    xml += "textMatch(text, '" + cmd.value + "');"
+                    scripts += xml;
                 }
             }
         }
