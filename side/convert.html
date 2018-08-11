@@ -1,40 +1,98 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Side convert</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<title>Side convert</title>
 
-    <style>
-    #side, #new_side {
-        width: 300px;
-        height: 200px;
-    }
-    </style>
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        let putUniqueId = document.getElementById('putUniqueId');
-        putUniqueId.addEventListener('click', () => {
-            let text = document.getElementById('side').value;
-            let a = JSON.parse(text);
-            console.log(a);
-            console.log(a.tests);
-            for (let i = 0;i < a.tests.length;i++) {
-                const partA = "00000000-0000-0000-" + (i.toString().padStart(4, '0'));
-                for (let j = 0;j < a.tests[i].commands.length;j++) {
-                    let partB = partA + "-" + (j.toString().padStart(12, '0'));
-                    a.tests[i].commands[j].id = partB;
+<style>
+#side, #new_side {
+    width: 300px;
+    height: 200px;
+}
+</style>
+<script>
+const puppeteerBase = `
+const puppeteer = require('puppeteer');
+
+const baseUrl = '__URL__';
+
+(async () => {
+    const browser = await puppeteer.launch({
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox'
+        ],
+        headless: false
+    });
+    const page = await browser.newPage();
+
+    __SCRIPTS__
+
+    browser.close();
+})();
+`
+document.addEventListener('DOMContentLoaded', () => {
+    let putUniqueId = document.getElementById('putUniqueId');
+    let convertToPuppeteer = document.getElementById('convertToPuppeteer');
+    putUniqueId.addEventListener('click', () => {
+        let text = document.getElementById('side').value;
+        let side = JSON.parse(text);
+        console.log(side);
+        console.log(side.tests);
+        for (let i = 0;i < side.tests.length;i++) {
+            const partA = "00000000-0000-0000-" + (i.toString().padStart(4, '0'));
+            for (let j = 0;j < side.tests[i].commands.length;j++) {
+                let partB = partA + "-" + (j.toString().padStart(12, '0'));
+                side.tests[i].commands[j].id = partB;
+            }
+        }
+        document.getElementById('new_side').value = JSON.stringify(side);
+    });
+    convertToPuppeteer.addEventListener('click', () => {
+        let text = document.getElementById('side').value;
+        let side = JSON.parse(text);
+        let newSide = puppeteerBase;
+        newSide = newSide.replace(/__URL__/, side.url);
+
+        let scripts = "";
+        for (let i = 0;i < side.tests.length;i++) {
+            for (let j = 0;j < side.tests[i].commands.length;j++) {
+                const cmd = side.tests[i].commands[j];
+                if (cmd.command === "clickAt") {
+                    let target = cmd.target;
+                    let match = target.match(/^id=(\S+)/);
+                    if (match) {
+                        target = "#" + match[1];
+                    }
+                    scripts += "\t" + "await page.click('" + target + "');" + "\n";
+                }
+                if (cmd.command === "open") {
+                    let target = cmd.target;
+                    scripts += "\t" + "await page.goto(baseUrl + \'" + target + "\');" + "\n";
+                }
+                if (cmd.command === "type") {
+                    let target = cmd.target;
+                    let match = target.match(/^id=(\S+)/);
+                    if (match) {
+                        target = "#" + match[1];
+                    }
+                    scripts += "\t" + "await page.type('" + target + "', '" + cmd.value + "\');" + "\n";
                 }
             }
-            document.getElementById('new_side').value = JSON.stringify(a);
-        });
+        }
+        newSide = newSide.replace(/__SCRIPTS__/, scripts);
+
+        document.getElementById('new_side').value = newSide;
     });
-    </script>
+});
+</script>
 </head>
 <body>
     <textarea id="side" ></textarea>
     <button id="putUniqueId">Unique ID</button>
+    <button id="convertToPuppeteer">To Puppeteer</button>
     <textarea id="new_side" ></textarea>
 </body>
 </html>
