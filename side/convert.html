@@ -53,15 +53,28 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
 public class SeleniumTest {
     private static final String BASE_URL = "__URL__";
+
+    private WebElement findAnyElement(WebDriver driver, By[] targets) {
+        for(By target: targets) {
+            WebElement element = driver.findElement(target);
+            if (element != null) {
+                return element;
+            }
+        }
+        return null;
+    }
+
     @Test
     public void test1() {
         System.setProperty("webdriver.gecko.driver", "./geckodriver");
         WebDriver driver = new FirefoxDriver();
         String verifyText = "";
+        By[] targets = null;
 
 __SCRIPTS__
 
@@ -147,14 +160,29 @@ document.addEventListener('DOMContentLoaded', () => {
             for (let j = 0;j < side.tests[i].commands.length;j++) {
                 indent = "        ";
                 const cmd = side.tests[i].commands[j];
-                // if (cmd.command === "clickAt") {
-                //     let target = cmd.target;
-                //     let match = target.match(/^id=(\S+)/);
-                //     if (match) {
-                //         target = "#" + match[1];
-                //     }
-                //     scripts += "\t" + "await page.click('" + target + "');" + "\n";
-                // }
+                if (cmd.command === "click") {
+
+                    let targetPart = "";
+                    for (let targetPair of cmd.targets) {
+                        let target = targetPair[0];
+                        let kind = targetPair[1];
+                        let match = target.match(/^xpath=(\S+)/);
+                        let match2 = target.match(/^css=(\S+)/);
+                        if (match && kind === "xpath:idRelative") {
+                            target = "By.xpath(\"" + match[1] + "\")";
+                        } else if (match2 && kind === "css:finder") {
+                            target = "By.cssSelector(\"" + match2[1] + "\")";
+                        } else {
+                            continue;
+                        }
+                        targetPart += target + ",\n";
+                    }
+                    scripts += `
+                    targets = new By[]{
+                        ${targetPart}
+                    };
+                    findAnyElement(driver, targets).click();\n`;
+                }
                 if (cmd.command === "open") {
                     let target = cmd.target;
                     scripts += indent + "driver.get(BASE_URL + \'" + target + "\');" + "\n";
@@ -168,14 +196,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 //     scripts += "\t" + "await page.type('" + target + "', '" + cmd.value + "\');" + "\n";
                 // }
                 if (cmd.command === "verifyText") {
-                    // let target = cmd.target;
-                    let target = cmd.targets[4][0];
-                    let match = target.match(/^xpath=(\S+)/);
-                    if (match) {
-                        target = match[1];
+                    let targetPart = "";
+                    for (let targetPair of cmd.targets) {
+                        let target = targetPair[0];
+                        let kind = targetPair[1];
+                        let match = target.match(/^xpath=(\S+)/);
+                        let match2 = target.match(/^css=(\S+)/);
+                        if (match && kind === "xpath:idRelative") {
+                            target = "By.xpath(\"" + match[1] + "\")";
+                        } else if (match2 && kind === "css:finder") {
+                            target = "By.cssSelector(\"" + match2[1] + "\")";
+                        } else {
+                            continue;
+                        }
+                        targetPart += target + ",\n";
                     }
                     scripts += `
-                    verifyText = driver.findElement(By.xpath("${target}")).getText();
+                    targets = new By[]{
+                        ${targetPart}
+                    };
+
+                    verifyText = findAnyElement(driver, targets).getText();
                     assertEquals(verifyText, "${cmd.value}");\n`;
                 }
             }
