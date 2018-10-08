@@ -8,8 +8,16 @@
 
 <style>
 #side, #new_side {
-    width: 300px;
-    height: 200px;
+    width: 100%;
+    height: 400px;
+    box-sizing: border-box;
+}
+
+article {
+    display: flex;
+}
+section.input_box, section.output_box {
+    width: 100%;
 }
 </style>
 <script>
@@ -39,10 +47,34 @@ const textMatch = function(expected, actual) {
     console.log(page.length);
     browser.close();
 })();
-`
+`;
+const seleniumBase = `
+import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+
+public class SeleniumTest {
+    private static final String BASE_URL = "__URL__";
+    @Test
+    public void test1() {
+        System.setProperty("webdriver.gecko.driver", "./geckodriver");
+        WebDriver driver = new FirefoxDriver();
+        String verifyText = "";
+
+__SCRIPTS__
+
+        driver.quit();
+    }
+}
+
+`;
+
 document.addEventListener('DOMContentLoaded', () => {
     let putUniqueId = document.getElementById('putUniqueId');
     let convertToPuppeteer = document.getElementById('convertToPuppeteer');
+    let convertToSelenium = document.getElementById('convertToSelenium');
     putUniqueId.addEventListener('click', () => {
         let text = document.getElementById('side').value;
         let side = JSON.parse(text);
@@ -93,9 +125,58 @@ document.addEventListener('DOMContentLoaded', () => {
                     let text = await page.evaluate(() => {
         const xpath = "${target}";
         return document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue.innerText;
-    });\n`
-                    xml += "textMatch(text, '" + cmd.value + "');"
+    });\n`;
+                    xml += "textMatch(text, '" + cmd.value + "');";
                     scripts += xml;
+                }
+            }
+        }
+        newSide = newSide.replace(/__SCRIPTS__/, scripts);
+
+        document.getElementById('new_side').value = newSide;
+    });
+    convertToSelenium.addEventListener('click', () => {
+        let text = document.getElementById('side').value;
+        let side = JSON.parse(text);
+        let newSide = seleniumBase;
+        newSide = newSide.replace(/__URL__/, side.url);
+
+        let scripts = "";
+        let indent = "";
+        for (let i = 0;i < side.tests.length;i++) {
+            for (let j = 0;j < side.tests[i].commands.length;j++) {
+                indent = "        ";
+                const cmd = side.tests[i].commands[j];
+                // if (cmd.command === "clickAt") {
+                //     let target = cmd.target;
+                //     let match = target.match(/^id=(\S+)/);
+                //     if (match) {
+                //         target = "#" + match[1];
+                //     }
+                //     scripts += "\t" + "await page.click('" + target + "');" + "\n";
+                // }
+                if (cmd.command === "open") {
+                    let target = cmd.target;
+                    scripts += indent + "driver.get(BASE_URL + \'" + target + "\');" + "\n";
+                }
+                // if (cmd.command === "type") {
+                //     let target = cmd.target;
+                //     let match = target.match(/^id=(\S+)/);
+                //     if (match) {
+                //         target = "#" + match[1];
+                //     }
+                //     scripts += "\t" + "await page.type('" + target + "', '" + cmd.value + "\');" + "\n";
+                // }
+                if (cmd.command === "verifyText") {
+                    // let target = cmd.target;
+                    let target = cmd.targets[4][0];
+                    let match = target.match(/^xpath=(\S+)/);
+                    if (match) {
+                        target = match[1];
+                    }
+                    scripts += `
+                    verifyText = driver.findElement(By.xpath("${target}")).getText();
+                    assertEquals(verifyText, "${cmd.value}");\n`;
                 }
             }
         }
@@ -107,9 +188,18 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </head>
 <body>
-    <textarea id="side" ></textarea>
-    <button id="putUniqueId">Unique ID</button>
-    <button id="convertToPuppeteer">To Puppeteer</button>
-    <textarea id="new_side" ></textarea>
+    <article>
+        <section class="input_box">
+            <textarea id="side" ></textarea>
+        </section>
+        <section>
+            <button id="putUniqueId">Unique ID</button><br/><br/>
+            <button id="convertToPuppeteer">To Puppeteer</button><br/>
+            <button id="convertToSelenium">To Selenium</button><br/>
+        </section>
+        <section class="output_box">
+            <textarea id="new_side" ></textarea>
+        </section>
+    </article>
 </body>
 </html>
