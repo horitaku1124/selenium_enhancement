@@ -156,25 +156,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let targetDecision = (target, targetList) => {
             let targetPart = "";
+            target = target.replace(/"/g, "\\\"");
             if (target) {
                 let match = target.match(/^xpath=(\S+)/);
-                let match2 = target.match(/^css=(\S+)/);
+                let match2 = target.match(/^css=(.+)/);
+                let match3 = target.match(/^id=(\S+)/);
+                let match4 = target.match(/^name=(\S+)/);
                 if (match) {
                     targetPart += "By.xpath(\"" + match[1] + "\"),";
                 } else if (match2) {
                     targetPart += "By.cssSelector(\"" + match2[1] + "\"),";
+                } else if (match3) {
+                    targetPart += "By.id(\"" + match3[1] + "\"),";
+                } else if (match4) {
+                    targetPart += "By.cssSelector(\"name=" + match4[1] + "\"),";
                 }
             }
             targetPart += "\n";
             for (let targetPair of targetList) {
                 let target = targetPair[0];
                 let kind = targetPair[1];
+                target = target.replace(/"/g, "\\\"");
                 let match = target.match(/^xpath=(\S+)/);
-                let match2 = target.match(/^css=(\S+)/);
+                let match2 = target.match(/^css=(.+)/);
+                let match3 = target.match(/^id=(\S+)/);
+                let match4 = target.match(/^name=(\S+)/);
                 if (match && kind === "xpath:idRelative") {
                     target = "By.xpath(\"" + match[1] + "\")";
                 } else if (match2 && kind === "css:finder") {
                     target = "By.cssSelector(\"" + match2[1] + "\")";
+                } else if (match3) {
+                    target = "By.id(\"" + match3[1] + "\")";
+                } else if (match4) {
+                    target = "By.cssSelector(\"name=" + match4[1] + "\")";
                 } else {
                     continue;
                 }
@@ -199,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 if (cmd.command === "open") {
                     let target = cmd.target;
-                    scripts += indent + "driver.get(BASE_URL + \'" + target + "\');" + "\n";
+                    scripts += indent + "driver.get(BASE_URL + \"" + target + "\");" + "\n";
                 }
                 // if (cmd.command === "type") {
                 //     let target = cmd.target;
