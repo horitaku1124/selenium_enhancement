@@ -233,14 +233,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     let target = cmd.target;
                     testcase += indent + "driver.get(BASE_URL + \"" + target + "\");" + "\n";
                 }
-                // if (cmd.command === "type") {
-                //     let target = cmd.target;
-                //     let match = target.match(/^id=(\S+)/);
-                //     if (match) {
-                //         target = "#" + match[1];
-                //     }
-                //     scripts += "\t" + "await page.type('" + target + "', '" + cmd.value + "\');" + "\n";
-                // }
+                if (cmd.command === "type") {
+                    let value = cmd.value;
+                    let targetPart = targetDecision(cmd.target, cmd.targets);
+                    testcase += `
+                    targets = new By[]{
+                        ${targetPart}
+                    };
+                    findAnyElement(driver, targets).sendKeys(\"${value}\");\n`;
+                }
                 if (cmd.command === "verifyText") {
                     let targetPart = targetDecision(cmd.target, cmd.targets);
                     testcase += `
