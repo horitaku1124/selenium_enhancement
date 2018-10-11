@@ -50,13 +50,15 @@ const textMatch = function(expected, actual) {
 `;
 const seleniumBase = `
 import org.junit.Test;
+import org.junit.After;
+import org.junit.Before;
 import static org.junit.Assert.assertEquals;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
-public class SeleniumTest {
+public class __CLASS_NAME__ {
     private static final String BASE_URL = "__URL__";
 
     private WebElement findAnyElement(WebDriver driver, By[] targets) {
@@ -69,16 +71,24 @@ public class SeleniumTest {
         return null;
     }
 
+    private WebDriver driver;
+    @Before
+    public void before() {
+        System.setProperty("webdriver.gecko.driver", "./geckodriver");
+        driver = new FirefoxDriver();
+    }
+    @After
+    public void after() {
+        driver.quit();
+    }
+
     @Test
     public void test1() {
-        System.setProperty("webdriver.gecko.driver", "./geckodriver");
-        WebDriver driver = new FirefoxDriver();
         String verifyText = "";
         By[] targets = null;
 
 __SCRIPTS__
 
-        driver.quit();
     }
 }
 
@@ -150,9 +160,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     convertToSelenium.addEventListener('click', () => {
         let text = document.getElementById('side').value;
+        let className = document.getElementById('class_name').value;
         let side = JSON.parse(text);
         let newSide = seleniumBase;
         newSide = newSide.replace(/__URL__/, side.url);
+        newSide = newSide.replace(/__CLASS_NAME__/, className);
 
         let targetDecision = (target, targetList) => {
             let targetPart = "";
@@ -249,6 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </section>
         <section>
             <button id="putUniqueId">Unique ID</button><br/><br/>
+            <input type="text" id="class_name" value="SeleniumTest">
             <button id="convertToPuppeteer">To Puppeteer</button><br/>
             <button id="convertToSelenium">To Selenium</button><br/>
         </section>
