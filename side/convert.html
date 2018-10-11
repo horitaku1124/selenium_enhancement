@@ -82,16 +82,21 @@ public class __CLASS_NAME__ {
         driver.quit();
     }
 
+__TESTCASES__
+
+}
+
+`;
+
+const seleniumTestCaseBase = `
     @Test
-    public void test1() {
+    public void test__TESTNAME__() {
         String verifyText = "";
         By[] targets = null;
 
 __SCRIPTS__
 
     }
-}
-
 `;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -212,12 +217,13 @@ document.addEventListener('DOMContentLoaded', () => {
         let scripts = "";
         let indent = "";
         for (let i = 0;i < side.tests.length;i++) {
+            let testcase = "";
             for (let j = 0;j < side.tests[i].commands.length;j++) {
                 indent = "        ";
                 const cmd = side.tests[i].commands[j];
                 if (cmd.command === "click" || cmd.command === "clickAt") {
                     let targetPart = targetDecision(cmd.target, cmd.targets);
-                    scripts += `
+                    testcase += `
                     targets = new By[]{
                         ${targetPart}
                     };
@@ -225,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 if (cmd.command === "open") {
                     let target = cmd.target;
-                    scripts += indent + "driver.get(BASE_URL + \"" + target + "\");" + "\n";
+                    testcase += indent + "driver.get(BASE_URL + \"" + target + "\");" + "\n";
                 }
                 // if (cmd.command === "type") {
                 //     let target = cmd.target;
@@ -237,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // }
                 if (cmd.command === "verifyText") {
                     let targetPart = targetDecision(cmd.target, cmd.targets);
-                    scripts += `
+                    testcase += `
                     targets = new By[]{
                         ${targetPart}
                     };
@@ -246,8 +252,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     assertEquals(verifyText, "${cmd.value}");\n`;
                 }
             }
+            scripts += seleniumTestCaseBase.replace(/__SCRIPTS__/g, testcase).replace(/__TESTNAME__/, i);
         }
-        newSide = newSide.replace(/__SCRIPTS__/, scripts);
+        newSide = newSide.replace(/__TESTCASES__/, scripts);
 
         document.getElementById('new_side').value = newSide;
     });
