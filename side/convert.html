@@ -58,6 +58,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.InvalidArgumentException;
+import org.openqa.selenium.NoSuchElementException;
 
 public class __CLASS_NAME__ {
     private static final String BASE_URL = "__URL__";
@@ -71,12 +72,30 @@ public class __CLASS_NAME__ {
         }
         return null;
     }
+    private void findAndClick(WebDriver driver, By[] targets) {
+        for(By target: targets) {
+            try {
+                WebElement element = driver.findElement(target);
+                element.click();
+            } catch (InvalidArgumentException e) {
+                System.err.println("InvalidArgumentException");
+                System.err.println(target);
+                e.printStackTrace();
+            } catch (NoSuchElementException e) {
+                System.err.println("NoSuchElementException");
+                System.err.println(target);
+                e.printStackTrace();
+            }
+        }
+    }
 
     private WebDriver driver;
+    private String uploadFilePath;
     @Before
     public void before() {
         System.setProperty("webdriver.gecko.driver", "./geckodriver");
         driver = new FirefoxDriver();
+        uploadFilePath = System.getProperty("user.dir") + "/src/test/resources/";
     }
     @After
     public void after() {
@@ -228,11 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     targets = new By[]{
                         ${targetPart}
                     };
-                    try {
-                        findAnyElement(driver, targets).click();
-                    } catch (InvalidArgumentException e) {
-                        e.printStackTrace();
-                    }
+                    findAndClick(driver, targets);
                     \n`;
                 }
                 if (cmd.command === "open") {
@@ -242,14 +257,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (cmd.command === "type") {
                     let value = cmd.value;
                     value = value.replace(/\\/g, "\\\\");
-                    value = value.replace(/C:\\\\fakepath\\\\/g, "./src/test/resources/");
 
                     let targetPart = targetDecision(cmd.target, cmd.targets);
                     testcase += `
                     targets = new By[]{
                         ${targetPart}
-                    };
-                    findAnyElement(driver, targets).sendKeys(\"${value}\");\n`;
+                    };\n`;
+                    if (value.match(/C:\\\\fakepath\\\\/)) {
+                        value = value.replace(/C:\\\\fakepath\\\\/g, "");
+                        testcase +=  `findAnyElement(driver, targets).sendKeys(uploadFilePath + \"${value}\");\n`;
+                    } else {
+                        testcase +=  `findAnyElement(driver, targets).sendKeys(\"${value}\");\n`;
+                    }
+
                 }
                 if (cmd.command === "verifyText") {
                     let targetPart = targetDecision(cmd.target, cmd.targets);
