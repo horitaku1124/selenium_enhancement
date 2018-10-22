@@ -77,6 +77,7 @@ public class __CLASS_NAME__ {
             try {
                 WebElement element = driver.findElement(target);
                 element.click();
+                return;
             } catch (InvalidArgumentException e) {
                 System.err.println("InvalidArgumentException");
                 System.err.println(target);
@@ -87,6 +88,7 @@ public class __CLASS_NAME__ {
                 e.printStackTrace();
             }
         }
+        throw new RuntimeException("no elements");
     }
 
     private WebDriver driver;
