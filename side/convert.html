@@ -60,10 +60,12 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.InvalidArgumentException;
 import org.openqa.selenium.NoSuchElementException;
 
+import java.io.IOException;
+
 public class __CLASS_NAME__ {
     private static final String BASE_URL = "__URL__";
 
-    private WebElement findAnyElement(WebDriver driver, By[] targets) {
+    private WebElement findAnyElement(WebDriver driver, By[] targets) throws IOException, InterruptedException {
         for(By target: targets) {
             WebElement element = driver.findElement(target);
             if (element != null) {
@@ -72,7 +74,7 @@ public class __CLASS_NAME__ {
         }
         return null;
     }
-    private void findAndClick(WebDriver driver, By[] targets) {
+    private void findAndClick(WebDriver driver, By[] targets) throws IOException, InterruptedException {
         for(By target: targets) {
             try {
                 WebElement element = driver.findElement(target);
@@ -97,7 +99,9 @@ public class __CLASS_NAME__ {
     public void before() {
         System.setProperty("webdriver.gecko.driver", "./geckodriver");
         driver = new FirefoxDriver();
-        uploadFilePath = System.getProperty("user.dir") + "/src/test/resources/";
+        String path = System.getProperty("user.dir");
+        //path = path.replaceAll("\\\\\\\\", "/");
+        uploadFilePath = path + "/src/test/resources/";
     }
     @After
     public void after() {
@@ -112,7 +116,7 @@ __TESTCASES__
 
 const seleniumTestCaseBase = `
     @Test
-    public void test__TESTNAME__() {
+    public void test__TESTNAME__() throws IOException, InterruptedException {
         String verifyText = "";
         By[] targets = null;
 
