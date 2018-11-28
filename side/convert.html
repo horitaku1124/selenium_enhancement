@@ -63,6 +63,9 @@ import java.io.File;
 public class __CLASS_NAME__ {
     private static final String BASE_URL = "__URL__";
 
+    private By css(String cssSelector) {
+        return By.cssSelector(cssSelector);
+    }
     private WebElement findAnyElement(WebDriver driver, By[] targets) throws IOException, InterruptedException {
         for(By target: targets) {
             WebElement element = driver.findElement(target);
@@ -201,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
         newSide = newSide.replace(/__CLASS_NAME__/, className);
 
         let targetDecision = (target, targetList) => {
-            let targetPart = "";
+            let findCandidates = [];
             target = target.replace(/"/g, "\\\"");
             if (target) {
                 let match = target.match(/^xpath=(\S+)/);
@@ -209,16 +212,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 let match3 = target.match(/^id=(\S+)/);
                 let match4 = target.match(/^name=(\S+)/);
                 if (match) {
-                    targetPart += "xpath(\"" + match[1] + "\"),";
+                    findCandidates.push(["xpath", match[1]]);
                 } else if (match2) {
-                    targetPart += "cssSelector(\"" + match2[1] + "\"),";
+                    findCandidates.push(["css", match2[1]]);
                 } else if (match3) {
-                    targetPart += "id(\"" + match3[1] + "\"),";
+                    findCandidates.push(["id", match3[1]]);
                 } else if (match4) {
-                    targetPart += "cssSelector(\"*[name=" + match4[1] + "]\"),";
+                    findCandidates.push(["css", "*[name=" + match4[1] + "]"]);
                 }
             }
-            targetPart += "\n";
             for (let targetPair of targetList) {
                 let target = targetPair[0];
                 let kind = targetPair[1];
@@ -228,19 +230,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 let match3 = target.match(/^id=(\S+)/);
                 let match4 = target.match(/^name=(\S+)/);
                 if (match && kind === "xpath:idRelative") {
-                    target = "xpath(\"" + match[1] + "\")";
+                    findCandidates.push(["xpath", match[1]]);
                 } else if (match2 && kind === "css:finder") {
-                    target = "cssSelector(\"" + match2[1] + "\")";
+                    findCandidates.push(["css", match2[1]]);
                 } else if (match3) {
-                    target = "id(\"" + match3[1] + "\")";
+                    findCandidates.push(["id", match3[1]]);
                 } else if (match4) {
-                    target = "cssSelector(\"*[name=" + match4[1] + "]\")";
-                } else {
-                    continue;
+                    findCandidates.push(["css", "*[name=" + match4[1] + "]"]);
                 }
-                targetPart += target + ",\n";
             }
-            return targetPart;
+            let toStr = [];
+            for (let set of findCandidates) {
+                let command = `${set[0]}("${set[1]}")`;
+                if (!toStr.includes(command)) {
+                    toStr.push(command);
+                }
+            }
+            return toStr.join(",\n");
         };
 
         let scripts = "";
