@@ -303,13 +303,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('new_side').value = newSide;
     });
+
+    document.getElementById('input_file').addEventListener('change', function (evt) {
+        let files = evt.target.files; // FileList object
+        for (let file of files) {
+            // console.log(file.type);
+            let reader = new FileReader();
+            reader.onload = txt => {
+                // console.log(txt.target.result);
+                document.getElementById('side').innerText = txt.target.result;
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+    }, false);
 });
 </script>
 </head>
 <body>
     <article>
         <section class="input_box">
-            <textarea id="side" ></textarea>
+            <textarea id="side" ></textarea><br />
+            <input id="input_file" type="file">
         </section>
         <section>
             <button id="putUniqueId">Unique ID</button><br/><br/>
