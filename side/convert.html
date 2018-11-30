@@ -20,10 +20,8 @@ section.input_box, section.output_box {
     width: 100%;
 }
     #side {
-        background-image: url('./dropme.png');
-        background-repeat: no-repeat;
+        background: url('./dropme.png') no-repeat center;
         background-size: 50%;
-        background-position: center;
     }
 </style>
 <script>
@@ -301,6 +299,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     verifyText = findAnyElement(driver, targets).getText();
                     assertEquals(verifyText, "${cmd.value}");\n`;
+                }
+                if (cmd.command === "setWindowSize") {
+                    let target = cmd.target.split("x");
+                    testcase += indent + `driver.manage().window().setSize(new Dimension(${target.join(", ")}));\n`;
                 }
             }
             scripts += seleniumTestCaseBase.replace(/__SCRIPTS__/g, testcase).replace(/__TESTNAME__/, i);
