@@ -19,6 +19,12 @@ article {
 section.input_box, section.output_box {
     width: 100%;
 }
+    #side {
+        background-image: url('./dropme.png');
+        background-repeat: no-repeat;
+        background-size: 50%;
+        background-position: center;
+    }
 </style>
 <script>
 const puppeteerBase = `
@@ -304,8 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('new_side').value = newSide;
     });
 
-    document.getElementById('input_file').addEventListener('change', function (evt) {
-        let files = evt.target.files; // FileList object
+    let readFile = function(files) {
         for (let file of files) {
             // console.log(file.type);
             let reader = new FileReader();
@@ -315,7 +320,18 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             reader.readAsText(file, 'UTF-8');
         }
+    };
+    document.getElementById('input_file').addEventListener('change', function (evt) {
+        let files = evt.target.files; // FileList object
+        document.getElementById('side').style.backgroundSize = "0";
+        readFile(files);
     }, false);
+
+    document.getElementById('side').addEventListener('drop', function (e) {
+        e.preventDefault();
+        document.getElementById('side').style.backgroundSize = "0";
+        readFile(e.dataTransfer.files);
+    });
 });
 </script>
 </head>
