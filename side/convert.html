@@ -321,8 +321,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // console.log(file.type);
             let reader = new FileReader();
             reader.onload = txt => {
-                // console.log(txt.target.result);
-                document.getElementById('side').innerText = txt.target.result;
+                let text = txt.target.result.replace(/\n/g, "\r\n");
+                console.log(text);
+                document.getElementById('side').value = text;
             };
             reader.readAsText(file, 'UTF-8');
         }
