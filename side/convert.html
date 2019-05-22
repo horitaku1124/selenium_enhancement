@@ -72,9 +72,14 @@ public class __CLASS_NAME__ {
     }
     private WebElement findAnyElement(WebDriver driver, By[] targets) throws IOException, InterruptedException {
         for(By target: targets) {
-            WebElement element = driver.findElement(target);
-            if (element != null) {
-                return element;
+            try {
+                WebElement element = driver.findElement(target);
+                if (element != null) {
+                    return element;
+                }
+            } catch (InvalidArgumentException | NoSuchElementException e) {
+                System.err.println(e.getClass().getName() + ":" + target);
+                e.printStackTrace();
             }
         }
         throw new RuntimeException("no elements");
@@ -85,13 +90,8 @@ public class __CLASS_NAME__ {
                 WebElement element = driver.findElement(target);
                 element.click();
                 return;
-            } catch (InvalidArgumentException e) {
-                System.err.println("InvalidArgumentException");
-                System.err.println(target);
-                e.printStackTrace();
-            } catch (NoSuchElementException e) {
-                System.err.println("NoSuchElementException");
-                System.err.println(target);
+            } catch (InvalidArgumentException | NoSuchElementException e) {
+                System.err.println(e.getClass().getName() + ":" + target);
                 e.printStackTrace();
             }
         }
@@ -107,7 +107,7 @@ public class __CLASS_NAME__ {
     private String uploadFilePath;
     @Before
     public void before() {
-        System.setProperty("webdriver.gecko.driver", "./geckodriver");
+        System.setProperty("webdriver.gecko.driver", "./drivers/geckodriver");
         driver = new FirefoxDriver();
         String path = System.getProperty("user.dir");
         //path = path.replaceAll("\\\\\\\\", "/");
@@ -200,6 +200,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('new_side').value = newSide;
     });
     convertToSelenium.addEventListener('click', () => {
+        let delayInMs = parseInt(document.getElementById('delay_ms').value);
+        let checkedBrowsers = Array.from(document.querySelectorAll("input[name=browsers]:checked")).map(e => e.value);
         let text = document.getElementById('side').value;
         let className = document.getElementById('class_name').value;
         let side = JSON.parse(text);
@@ -266,8 +268,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     targets = new By[]{
                         ${targetPart}
                     };
-                    findAndClick(driver, targets);
                     \n`;
+                    if (delayInMs > 0) {
+                        testcase += `Thread.sleep(${delayInMs});`
+                    }
+                    testcase += `
+                    findAndClick(driver, targets);\n`;
+
                 }
                 if (cmd.command === "open") {
                     let target = cmd.target;
@@ -286,6 +293,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     targets = new By[]{
                         ${targetPart}
                     };\n`;
+
+                    if (delayInMs > 0) {
+                        testcase += `Thread.sleep(${delayInMs});`
+                    }
                     if (value.match(/C:\\\\fakepath\\\\/)) {
                         value = value.replace(/C:\\\\fakepath\\\\/g, "");
                         testcase +=  `findAnyElement(driver, targets).sendKeys(uploadFilePath + \"${value}\");\n`;
@@ -353,6 +364,17 @@ document.addEventListener('DOMContentLoaded', () => {
             <input type="text" id="class_name" value="SeleniumTest">
             <button id="convertToPuppeteer">To Puppeteer</button><br/>
             <button id="convertToSelenium">To Selenium</button><br/>
+
+            Delay:<input type="number" id="delay_ms" name="delay" value="0" step="100" min="0" style="width: 50px; text-align: right;">
+            <div>
+                <ul>
+                    <li><label><input type="checkbox" name="browsers" value="firefox" checked="checked">FireFox</label></li>
+                    <li><label><input type="checkbox" name="browsers" value="chrome" checked="checked">Chrome</label></li>
+                    <li><label><input type="checkbox" name="browsers" value="ie" >IE</label></li>
+                    <li><label><input type="checkbox" name="browsers" value="edge" >Edge</label></li>
+                    <li><label><input type="checkbox" name="browsers" value="safari" >Safari</label></li>
+                </ul>
+            </div>
         </section>
         <section class="output_box">
             <textarea id="new_side" ></textarea>
