@@ -57,15 +57,41 @@ import org.junit.Test;
 import org.junit.After;
 import org.junit.Before;
 import static org.junit.Assert.assertEquals;
+
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.openqa.selenium.*;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.ie.InternetExplorerDriver;
+import org.openqa.selenium.safari.SafariDriver;
+
 import static org.openqa.selenium.By.*;
 
 import java.io.IOException;
 import java.io.File;
+import java.util.Arrays;
 
+
+@RunWith(value = Parameterized.class)
 public class __CLASS_NAME__ {
+    private String OS = System.getProperty("os.name").toLowerCase();
+    private boolean isWindows = OS.contains("win");
     private static final String BASE_URL = "__URL__";
+
+    private String browser;
+
+     public __CLASS_NAME__ (String browser) {
+        this.browser = browser;
+    }
+    @Parameterized.Parameters(name= "Browser = {0}")
+    public static Iterable<Object[]> data() {
+        return Arrays.asList(new Object[][]{
+              __BROWSERS__
+            }
+        );
+    }
 
     private By css(String cssSelector) {
         return By.cssSelector(cssSelector);
@@ -107,8 +133,25 @@ public class __CLASS_NAME__ {
     private String uploadFilePath;
     @Before
     public void before() {
-        System.setProperty("webdriver.gecko.driver", "./drivers/geckodriver");
-        driver = new FirefoxDriver();
+        System.out.println("browser=" + browser);
+        if ("firefox".equals(browser)) {
+            System.setProperty("webdriver.gecko.driver", "./drivers/geckodriver" + (isWindows ? ".exe" : ""));
+            driver = new FirefoxDriver();
+        } else if ("chrome".equals(browser)) {
+            System.setProperty("webdriver.chrome.driver", "./drivers/chromedriver" + (isWindows ? ".exe" : ""));
+            driver = new ChromeDriver();
+        } else if ("safari".equals(browser)) {
+            System.setProperty("webdriver.safari.noinstall", "true");
+            driver = new SafariDriver();
+        } else if ("edge".equals(browser)) {
+            System.setProperty("webdriver.edge.driver", "./drivers/MicrosoftWebDriver" + (isWindows ? ".exe" : ""));
+            driver = new EdgeDriver();
+        } else if ("ie".equals(browser)) {
+            System.setProperty("webdriver.ie.driver", "./drivers/IEDriverServer.exe");
+            driver = new InternetExplorerDriver();
+        } else {
+            throw new RuntimeException(browser);
+        }
         String path = System.getProperty("user.dir");
         //path = path.replaceAll("\\\\\\\\", "/");
         uploadFilePath = path + "/src/test/resources/";
@@ -207,7 +250,10 @@ document.addEventListener('DOMContentLoaded', () => {
         let side = JSON.parse(text);
         let newSide = seleniumBase;
         newSide = newSide.replace(/__URL__/, side.url);
-        newSide = newSide.replace(/__CLASS_NAME__/, className);
+        newSide = newSide.replace(/__CLASS_NAME__/g, className);
+
+        let browsers = checkedBrowsers.map(s => '{"' + s + '"},').join("\n");
+        newSide = newSide.replace(/__BROWSERS__/g, browsers);
 
         let targetDecision = (target, targetList) => {
             let findCandidates = [];
