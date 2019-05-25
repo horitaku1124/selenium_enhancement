@@ -216,6 +216,132 @@ __TESTCASES__
 
 `;
 
+const selenuimBaseKotlin = `
+import org.junit.Test
+import org.junit.After
+import org.junit.Before
+import org.junit.Assert.assertEquals
+
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
+import org.openqa.selenium.*
+import org.openqa.selenium.chrome.ChromeDriver
+import org.openqa.selenium.edge.EdgeDriver
+import org.openqa.selenium.firefox.FirefoxDriver
+import org.openqa.selenium.ie.InternetExplorerDriver
+import org.openqa.selenium.safari.SafariDriver
+
+import org.openqa.selenium.By.*
+
+import java.io.IOException
+import java.io.File
+import java.util.Arrays
+
+
+@RunWith(value = Parameterized::class)
+class __CLASS_NAME__(private val browser: String) {
+  companion object {
+    @JvmStatic
+    @Parameterized.Parameters(name = "Browser = {0}")
+    fun data(): Iterable<Array<Any>> {
+      return Arrays.asList(
+        *arrayOf(
+             __BROWSERS__
+         )
+      )
+    }
+  }
+
+  private val OS = System.getProperty("os.name").toLowerCase()
+  private val isWindows = OS.contains("win")
+  private val BASE_URL = "__URL__"
+
+
+  private fun css(cssSelector: String): By {
+    return cssSelector(cssSelector)
+  }
+
+  private fun findAnyElement(driver: WebDriver, targets: Array<By>): WebElement {
+    for (target in targets) {
+      try {
+        val element = driver.findElement(target)
+        if (element != null) {
+          return element
+        }
+      } catch (e: InvalidArgumentException) {
+        System.err.println(e.javaClass.name + ":" + target)
+        e.printStackTrace()
+      } catch (e: NoSuchElementException) {
+        System.err.println(e.javaClass.name + ":" + target)
+        e.printStackTrace()
+      }
+
+    }
+    throw RuntimeException("no elements")
+  }
+
+  private fun findAndClick(driver: WebDriver, targets: Array<By>) {
+    for (target in targets) {
+      try {
+        val element = driver.findElement(target)
+        element.click()
+        return
+      } catch (e: InvalidArgumentException) {
+        System.err.println(e.javaClass.name + ":" + target)
+        e.printStackTrace()
+      } catch (e: NoSuchElementException) {
+        System.err.println(e.javaClass.name + ":" + target)
+        e.printStackTrace()
+      }
+
+    }
+    throw RuntimeException("no elements")
+  }
+
+  private fun takeScreenShot(dist: String) {
+    val ss = (driver as TakesScreenshot).getScreenshotAs(OutputType.FILE)
+    ss.renameTo(File(dist))
+  }
+
+  private lateinit var driver: WebDriver
+  private var uploadFilePath: String? = null
+  @Before
+  fun before() {
+    println("browser=$browser")
+    if ("firefox" == browser) {
+      System.setProperty("webdriver.gecko.driver", "./drivers/geckodriver" + if (isWindows) ".exe" else "")
+      driver = FirefoxDriver()
+    } else if ("chrome" == browser) {
+      System.setProperty("webdriver.chrome.driver", "./drivers/chromedriver" + if (isWindows) ".exe" else "")
+      driver = ChromeDriver()
+    } else if ("safari" == browser) {
+      System.setProperty("webdriver.safari.noinstall", "true")
+      driver = SafariDriver()
+    } else if ("edge" == browser) {
+      System.setProperty("webdriver.edge.driver", "./drivers/MicrosoftWebDriver" + if (isWindows) ".exe" else "")
+      driver = EdgeDriver()
+    } else if ("ie" == browser) {
+      System.setProperty("webdriver.ie.driver", "./drivers/IEDriverServer.exe")
+      driver = InternetExplorerDriver()
+    } else {
+      throw RuntimeException(browser)
+    }
+    val path = System.getProperty("user.dir")
+    //path = path.replaceAll("\\\\\\\\", "/");
+    uploadFilePath = "$path/src/test/resources/"
+  }
+
+  @After
+  fun after() {
+    driver.quit()
+  }
+
+
+  __TESTCASES__
+
+}
+`;
+
 const seleniumTestCaseBase = `
     @Test
     public void test__TESTNAME__() throws IOException, InterruptedException {
@@ -227,10 +353,183 @@ __SCRIPTS__
     }
 `;
 
+
+const seleniumTestCaseBaseKotlin = `
+  @Test
+  fun test__TESTNAME__() {
+        var verifyText:String? = "";
+        var targets:Array<By>? = null;
+
+__SCRIPTS__
+
+    }
+`;
+
+function generateSeleniumCode(isKotlin = false) {
+    let delayInMs = parseInt(document.getElementById('delay_ms').value);
+    let checkedBrowsers = Array.from(document.querySelectorAll("input[name=browsers]:checked")).map(e => e.value);
+    let text = document.getElementById('side').value;
+    let className = document.getElementById('class_name').value;
+    let side = JSON.parse(text);
+    let newSide = isKotlin ? selenuimBaseKotlin : seleniumBase;
+    newSide = newSide.replace(/__URL__/, side.url);
+    newSide = newSide.replace(/__CLASS_NAME__/g, className);
+    const EOL = isKotlin ? "\n" : ";\n";
+
+    let browsers =
+        isKotlin
+            ? checkedBrowsers.map(s => 'arrayOf<Any>("' + s + '")').join(",\n")
+            : checkedBrowsers.map(s => '{"' + s + '"},').join("\n");
+
+    newSide = newSide.replace(/__BROWSERS__/g, browsers);
+
+    let targetDecision = (target, targetList) => {
+        let findCandidates = [];
+        target = target.replace(/"/g, "\\\"");
+        if (target) {
+            let match = target.match(/^xpath=(\S+)/);
+            let match2 = target.match(/^css=(.+)/);
+            let match3 = target.match(/^id=(\S+)/);
+            let match4 = target.match(/^name=(\S+)/);
+            if (match) {
+                findCandidates.push(["xpath", match[1]]);
+            } else if (match2) {
+                findCandidates.push(["css", match2[1]]);
+            } else if (match3) {
+                findCandidates.push(["id", match3[1]]);
+            } else if (match4) {
+                findCandidates.push(["css", "*[name=" + match4[1] + "]"]);
+            }
+        }
+        for (let targetPair of targetList) {
+            let target = targetPair[0];
+            let kind = targetPair[1];
+            target = target.replace(/"/g, "\\\"");
+            let match = target.match(/^xpath=(\S+)/);
+            let match2 = target.match(/^css=(.+)/);
+            let match3 = target.match(/^id=(\S+)/);
+            let match4 = target.match(/^name=(\S+)/);
+            if (match && kind === "xpath:idRelative") {
+                findCandidates.push(["xpath", match[1]]);
+            } else if (match2 && kind === "css:finder") {
+                findCandidates.push(["css", match2[1]]);
+            } else if (match3) {
+                findCandidates.push(["id", match3[1]]);
+            } else if (match4) {
+                findCandidates.push(["css", "*[name=" + match4[1] + "]"]);
+            }
+        }
+        let toStr = [];
+        for (let set of findCandidates) {
+            let command = `${set[0]}("${set[1]}")`;
+            if (!toStr.includes(command)) {
+                toStr.push(command);
+            }
+        }
+        return toStr.join(",\n");
+    };
+
+    let scripts = "";
+    let indent = "";
+    for (let i = 0;i < side.tests.length;i++) {
+        let testcase = "";
+        for (let j = 0;j < side.tests[i].commands.length;j++) {
+            indent = "        ";
+            const cmd = side.tests[i].commands[j];
+            if (cmd.command === "click" || cmd.command === "clickAt") {
+                let targetPart = targetDecision(cmd.target, cmd.targets);
+                if (isKotlin) {
+                    testcase += `
+                    targets = arrayOf<By>(
+                        ${targetPart}
+                    )${EOL}
+                    findAndClick(driver, targets)${EOL}`;
+                } else {
+                    testcase += `
+                    targets = new By[]{
+                        ${targetPart}
+                    }${EOL}
+                    findAndClick(driver, targets)${EOL}`;
+                }
+                if (delayInMs > 0) {
+                    testcase += `Thread.sleep(${delayInMs})${EOL}\n`
+                }
+            }
+            if (cmd.command === "open") {
+                let target = cmd.target;
+                if (target.indexOf("http://") >= 0 || target.indexOf("https://") >= 0 ) {
+                    testcase += indent + "driver.get(\"" + target + "\")" + EOL;
+                } else {
+                    testcase += indent + "driver.get(BASE_URL + \"" + target + "\")" + EOL;
+                }
+            }
+            if (cmd.command === "type") {
+                let value = cmd.value;
+                value = value.replace(/\\/g, "\\\\");
+
+                let targetPart = targetDecision(cmd.target, cmd.targets);
+                if (isKotlin) {
+                    testcase += `
+                    targets = arrayOf<By>(
+                        ${targetPart}
+                    )${EOL}`;
+                } else {
+                    testcase += `
+                    targets = new By[]{
+                        ${targetPart}
+                    }${EOL}`;
+                }
+
+                if (delayInMs > 0) {
+                    testcase += `Thread.sleep(${delayInMs})${EOL}`
+                }
+                if (value.match(/C:\\\\fakepath\\\\/)) {
+                    value = value.replace(/C:\\\\fakepath\\\\/g, "");
+                    testcase +=  `findAnyElement(driver, targets).sendKeys(uploadFilePath + \"${value}\")${EOL}`;
+                } else {
+                    testcase +=  `findAnyElement(driver, targets).sendKeys(\"${value}\")${EOL}`;
+                }
+
+            }
+            if (cmd.command === "verifyText") {
+                let targetPart = targetDecision(cmd.target, cmd.targets);
+                if (isKotlin) {
+                    testcase += `
+                    targets = arrayOf<By>(
+                        ${targetPart}
+                    )
+                    verifyText = findAnyElement(driver, targets).text
+                    assertEquals(verifyText, "${cmd.value}")\n`;
+                } else {
+                    testcase += `
+                    targets = new By[]{
+                        ${targetPart}
+                    };
+
+                    verifyText = findAnyElement(driver, targets).getText();
+                    assertEquals(verifyText, "${cmd.value}");\n`;
+                }
+            }
+            if (cmd.command === "setWindowSize") {
+                let target = cmd.target.split("x");
+                const constructor = isKotlin ? "" : "new ";
+                testcase += indent + `driver.manage().window().setSize(${constructor} Dimension(${target.join(", ")}))${EOL}`;
+            }
+        }
+        let testCase = isKotlin ? seleniumTestCaseBaseKotlin : seleniumTestCaseBase;
+        scripts += testCase.replace(/__SCRIPTS__/g, testcase).replace(/__TESTNAME__/, i);
+    }
+    newSide = newSide.replace(/__TESTCASES__/, scripts);
+
+    document.getElementById('new_side').value = newSide;
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
     let putUniqueId = document.getElementById('putUniqueId');
     let convertToPuppeteer = document.getElementById('convertToPuppeteer');
     let convertToSelenium = document.getElementById('convertToSelenium');
+    let convertToSeleniumKotlin = document.getElementById('convertToSeleniumKotlin');
     putUniqueId.addEventListener('click', () => {
         let text = document.getElementById('side').value;
         let side = JSON.parse(text);
@@ -246,134 +545,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('new_side').value = JSON.stringify(side);
     });
     convertToPuppeteer.addEventListener('click', generatePuppeter);
-    convertToSelenium.addEventListener('click', () => {
-        let delayInMs = parseInt(document.getElementById('delay_ms').value);
-        let checkedBrowsers = Array.from(document.querySelectorAll("input[name=browsers]:checked")).map(e => e.value);
-        let text = document.getElementById('side').value;
-        let className = document.getElementById('class_name').value;
-        let side = JSON.parse(text);
-        let newSide = seleniumBase;
-        newSide = newSide.replace(/__URL__/, side.url);
-        newSide = newSide.replace(/__CLASS_NAME__/g, className);
-
-        let browsers = checkedBrowsers.map(s => '{"' + s + '"},').join("\n");
-        newSide = newSide.replace(/__BROWSERS__/g, browsers);
-
-        let targetDecision = (target, targetList) => {
-            let findCandidates = [];
-            target = target.replace(/"/g, "\\\"");
-            if (target) {
-                let match = target.match(/^xpath=(\S+)/);
-                let match2 = target.match(/^css=(.+)/);
-                let match3 = target.match(/^id=(\S+)/);
-                let match4 = target.match(/^name=(\S+)/);
-                if (match) {
-                    findCandidates.push(["xpath", match[1]]);
-                } else if (match2) {
-                    findCandidates.push(["css", match2[1]]);
-                } else if (match3) {
-                    findCandidates.push(["id", match3[1]]);
-                } else if (match4) {
-                    findCandidates.push(["css", "*[name=" + match4[1] + "]"]);
-                }
-            }
-            for (let targetPair of targetList) {
-                let target = targetPair[0];
-                let kind = targetPair[1];
-                target = target.replace(/"/g, "\\\"");
-                let match = target.match(/^xpath=(\S+)/);
-                let match2 = target.match(/^css=(.+)/);
-                let match3 = target.match(/^id=(\S+)/);
-                let match4 = target.match(/^name=(\S+)/);
-                if (match && kind === "xpath:idRelative") {
-                    findCandidates.push(["xpath", match[1]]);
-                } else if (match2 && kind === "css:finder") {
-                    findCandidates.push(["css", match2[1]]);
-                } else if (match3) {
-                    findCandidates.push(["id", match3[1]]);
-                } else if (match4) {
-                    findCandidates.push(["css", "*[name=" + match4[1] + "]"]);
-                }
-            }
-            let toStr = [];
-            for (let set of findCandidates) {
-                let command = `${set[0]}("${set[1]}")`;
-                if (!toStr.includes(command)) {
-                    toStr.push(command);
-                }
-            }
-            return toStr.join(",\n");
-        };
-
-        let scripts = "";
-        let indent = "";
-        for (let i = 0;i < side.tests.length;i++) {
-            let testcase = "";
-            for (let j = 0;j < side.tests[i].commands.length;j++) {
-                indent = "        ";
-                const cmd = side.tests[i].commands[j];
-                if (cmd.command === "click" || cmd.command === "clickAt") {
-                    let targetPart = targetDecision(cmd.target, cmd.targets);
-                    testcase += `
-                    targets = new By[]{
-                        ${targetPart}
-                    };
-                    findAndClick(driver, targets);\n`;
-                    if (delayInMs > 0) {
-                        testcase += `Thread.sleep(${delayInMs});\n\n`
-                    }
-
-                }
-                if (cmd.command === "open") {
-                    let target = cmd.target;
-                    if (target.indexOf("http://") >= 0 || target.indexOf("https://") >= 0 ) {
-                        testcase += indent + "driver.get(\"" + target + "\");" + "\n";
-                    } else {
-                        testcase += indent + "driver.get(BASE_URL + \"" + target + "\");" + "\n";
-                    }
-                }
-                if (cmd.command === "type") {
-                    let value = cmd.value;
-                    value = value.replace(/\\/g, "\\\\");
-
-                    let targetPart = targetDecision(cmd.target, cmd.targets);
-                    testcase += `
-                    targets = new By[]{
-                        ${targetPart}
-                    };\n`;
-
-                    if (delayInMs > 0) {
-                        testcase += `Thread.sleep(${delayInMs});`
-                    }
-                    if (value.match(/C:\\\\fakepath\\\\/)) {
-                        value = value.replace(/C:\\\\fakepath\\\\/g, "");
-                        testcase +=  `findAnyElement(driver, targets).sendKeys(uploadFilePath + \"${value}\");\n`;
-                    } else {
-                        testcase +=  `findAnyElement(driver, targets).sendKeys(\"${value}\");\n`;
-                    }
-
-                }
-                if (cmd.command === "verifyText") {
-                    let targetPart = targetDecision(cmd.target, cmd.targets);
-                    testcase += `
-                    targets = new By[]{
-                        ${targetPart}
-                    };
-
-                    verifyText = findAnyElement(driver, targets).getText();
-                    assertEquals(verifyText, "${cmd.value}");\n`;
-                }
-                if (cmd.command === "setWindowSize") {
-                    let target = cmd.target.split("x");
-                    testcase += indent + `driver.manage().window().setSize(new Dimension(${target.join(", ")}));\n`;
-                }
-            }
-            scripts += seleniumTestCaseBase.replace(/__SCRIPTS__/g, testcase).replace(/__TESTNAME__/, i);
-        }
-        newSide = newSide.replace(/__TESTCASES__/, scripts);
-
-        document.getElementById('new_side').value = newSide;
-    });
+    convertToSelenium.addEventListener('click', () => generateSeleniumCode(false));
+    convertToSeleniumKotlin.addEventListener('click', () => generateSeleniumCode(true));
 
     let readFile = function(files) {
         for (let file of files) {
@@ -412,6 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <input type="text" id="class_name" value="SeleniumTest">
             <button id="convertToPuppeteer">To Puppeteer</button><br/>
             <button id="convertToSelenium">To Selenium</button><br/>
+            <button id="convertToSeleniumKotlin">To Selenium Kotlin</button><br/>
 
             Delay:<input type="number" id="delay_ms" name="delay" value="0" step="100" min="0" style="width: 50px; text-align: right;">
             <div>
