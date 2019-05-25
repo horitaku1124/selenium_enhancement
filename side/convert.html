@@ -24,7 +24,8 @@ section.input_box, section.output_box {
         background-size: 50%;
     }
 </style>
-<script>
+<script id="script_for_puppeter">
+
 const puppeteerBase = `
 const puppeteer = require('puppeteer');
 
@@ -52,6 +53,54 @@ const textMatch = function(expected, actual) {
     browser.close();
 })();
 `;
+function generatePuppeter() {
+    let text = document.getElementById('side').value;
+    let side = JSON.parse(text);
+    let newSide = puppeteerBase;
+    newSide = newSide.replace(/__URL__/, side.url);
+
+    let scripts = "";
+    for (let i = 0;i < side.tests.length;i++) {
+        for (let j = 0;j < side.tests[i].commands.length;j++) {
+            const cmd = side.tests[i].commands[j];
+            if (cmd.command === "clickAt") {
+                let target = cmd.target;
+                let match = target.match(/^id=(\S+)/);
+                if (match) {
+                    target = "#" + match[1];
+                }
+                scripts += "\t" + "await page.click('" + target + "');" + "\n";
+            }
+            if (cmd.command === "open") {
+                let target = cmd.target;
+                scripts += "\t" + "await page.goto(baseUrl + \'" + target + "\');" + "\n";
+            }
+            if (cmd.command === "type") {
+                let target = cmd.target;
+                let match = target.match(/^id=(\S+)/);
+                if (match) {
+                    target = "#" + match[1];
+                }
+                scripts += "\t" + "await page.type('" + target + "', '" + cmd.value + "\');" + "\n";
+            }
+            if (cmd.command === "verifyText") {
+                let target = cmd.target;
+                let xml = `
+                    let text = await page.evaluate(() => {
+        const xpath = "${target}";
+        return document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue.innerText;
+    });\n`;
+                xml += "textMatch(text, '" + cmd.value + "');";
+                scripts += xml;
+            }
+        }
+    }
+    newSide = newSide.replace(/__SCRIPTS__/, scripts);
+
+    document.getElementById('new_side').value = newSide;
+}
+</script>
+<script id="script_for_selenium">
 const seleniumBase = `
 import org.junit.Test;
 import org.junit.After;
@@ -196,52 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         document.getElementById('new_side').value = JSON.stringify(side);
     });
-    convertToPuppeteer.addEventListener('click', () => {
-        let text = document.getElementById('side').value;
-        let side = JSON.parse(text);
-        let newSide = puppeteerBase;
-        newSide = newSide.replace(/__URL__/, side.url);
-
-        let scripts = "";
-        for (let i = 0;i < side.tests.length;i++) {
-            for (let j = 0;j < side.tests[i].commands.length;j++) {
-                const cmd = side.tests[i].commands[j];
-                if (cmd.command === "clickAt") {
-                    let target = cmd.target;
-                    let match = target.match(/^id=(\S+)/);
-                    if (match) {
-                        target = "#" + match[1];
-                    }
-                    scripts += "\t" + "await page.click('" + target + "');" + "\n";
-                }
-                if (cmd.command === "open") {
-                    let target = cmd.target;
-                    scripts += "\t" + "await page.goto(baseUrl + \'" + target + "\');" + "\n";
-                }
-                if (cmd.command === "type") {
-                    let target = cmd.target;
-                    let match = target.match(/^id=(\S+)/);
-                    if (match) {
-                        target = "#" + match[1];
-                    }
-                    scripts += "\t" + "await page.type('" + target + "', '" + cmd.value + "\');" + "\n";
-                }
-                if (cmd.command === "verifyText") {
-                    let target = cmd.target;
-                    let xml = `
-                    let text = await page.evaluate(() => {
-        const xpath = "${target}";
-        return document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue.innerText;
-    });\n`;
-                    xml += "textMatch(text, '" + cmd.value + "');";
-                    scripts += xml;
-                }
-            }
-        }
-        newSide = newSide.replace(/__SCRIPTS__/, scripts);
-
-        document.getElementById('new_side').value = newSide;
-    });
+    convertToPuppeteer.addEventListener('click', generatePuppeter);
     convertToSelenium.addEventListener('click', () => {
         let delayInMs = parseInt(document.getElementById('delay_ms').value);
         let checkedBrowsers = Array.from(document.querySelectorAll("input[name=browsers]:checked")).map(e => e.value);
