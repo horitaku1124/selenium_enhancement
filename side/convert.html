@@ -318,12 +318,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     targets = new By[]{
                         ${targetPart}
                     };
-                    \n`;
-                    if (delayInMs > 0) {
-                        testcase += `Thread.sleep(${delayInMs});`
-                    }
-                    testcase += `
                     findAndClick(driver, targets);\n`;
+                    if (delayInMs > 0) {
+                        testcase += `Thread.sleep(${delayInMs});\n\n`
+                    }
 
                 }
                 if (cmd.command === "open") {
