@@ -110,16 +110,10 @@ import static org.junit.Assert.assertEquals;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.openqa.selenium.*;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.edge.EdgeDriver;
-import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.ie.InternetExplorerDriver;
-import org.openqa.selenium.safari.SafariDriver;
 
 import static org.openqa.selenium.By.*;
 
 import java.io.IOException;
-import java.io.File;
 import java.util.Arrays;
 
 
@@ -145,62 +139,12 @@ public class __CLASS_NAME__ {
     private By css(String cssSelector) {
         return By.cssSelector(cssSelector);
     }
-    private WebElement findAnyElement(WebDriver driver, By[] targets) throws IOException, InterruptedException {
-        for(By target: targets) {
-            try {
-                WebElement element = driver.findElement(target);
-                if (element != null) {
-                    return element;
-                }
-            } catch (InvalidArgumentException | NoSuchElementException e) {
-                System.err.println(e.getClass().getName() + ":" + target);
-                e.printStackTrace();
-            }
-        }
-        throw new RuntimeException("no elements");
-    }
-    private void findAndClick(WebDriver driver, By[] targets) throws IOException, InterruptedException {
-        for(By target: targets) {
-            try {
-                WebElement element = driver.findElement(target);
-                element.click();
-                return;
-            } catch (InvalidArgumentException | NoSuchElementException e) {
-                System.err.println(e.getClass().getName() + ":" + target);
-                e.printStackTrace();
-            }
-        }
-        throw new RuntimeException("no elements");
-    }
-
-    private void takeScreenShot(String dist) {
-        File ss = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
-        ss.renameTo(new File(dist));
-    }
 
     private WebDriver driver;
     private String uploadFilePath;
     @Before
     public void before() {
-        System.out.println("browser=" + browser);
-        if ("firefox".equals(browser)) {
-            System.setProperty("webdriver.gecko.driver", "./drivers/geckodriver" + (isWindows ? ".exe" : ""));
-            driver = new FirefoxDriver();
-        } else if ("chrome".equals(browser)) {
-            System.setProperty("webdriver.chrome.driver", "./drivers/chromedriver" + (isWindows ? ".exe" : ""));
-            driver = new ChromeDriver();
-        } else if ("safari".equals(browser)) {
-            System.setProperty("webdriver.safari.noinstall", "true");
-            driver = new SafariDriver();
-        } else if ("edge".equals(browser)) {
-            System.setProperty("webdriver.edge.driver", "./drivers/MicrosoftWebDriver" + (isWindows ? ".exe" : ""));
-            driver = new EdgeDriver();
-        } else if ("ie".equals(browser)) {
-            System.setProperty("webdriver.ie.driver", "./drivers/IEDriverServer.exe");
-            driver = new InternetExplorerDriver();
-        } else {
-            throw new RuntimeException(browser);
-        }
+        driver = TestBase.setupDriver(browser, isWindows);
         String path = System.getProperty("user.dir");
         //path = path.replaceAll("\\\\\\\\", "/");
         uploadFilePath = path + "/src/test/resources/";
@@ -225,17 +169,12 @@ import org.junit.Assert.assertEquals
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.openqa.selenium.*
-import org.openqa.selenium.chrome.ChromeDriver
-import org.openqa.selenium.edge.EdgeDriver
-import org.openqa.selenium.firefox.FirefoxDriver
-import org.openqa.selenium.ie.InternetExplorerDriver
-import org.openqa.selenium.safari.SafariDriver
 
 import org.openqa.selenium.By.*
 
-import java.io.IOException
-import java.io.File
 import java.util.Arrays
+import TestBase.findAndClick
+import TestBase.findAnyElement
 
 
 @RunWith(value = Parameterized::class)
@@ -245,9 +184,7 @@ class __CLASS_NAME__(private val browser: String) {
     @Parameterized.Parameters(name = "Browser = {0}")
     fun data(): Iterable<Array<Any>> {
       return Arrays.asList(
-        *arrayOf(
-             __BROWSERS__
-         )
+         __BROWSERS__
       )
     }
   }
@@ -261,71 +198,12 @@ class __CLASS_NAME__(private val browser: String) {
     return cssSelector(cssSelector)
   }
 
-  private fun findAnyElement(driver: WebDriver, targets: Array<By>): WebElement {
-    for (target in targets) {
-      try {
-        val element = driver.findElement(target)
-        if (element != null) {
-          return element
-        }
-      } catch (e: InvalidArgumentException) {
-        System.err.println(e.javaClass.name + ":" + target)
-        e.printStackTrace()
-      } catch (e: NoSuchElementException) {
-        System.err.println(e.javaClass.name + ":" + target)
-        e.printStackTrace()
-      }
-
-    }
-    throw RuntimeException("no elements")
-  }
-
-  private fun findAndClick(driver: WebDriver, targets: Array<By>) {
-    for (target in targets) {
-      try {
-        val element = driver.findElement(target)
-        element.click()
-        return
-      } catch (e: InvalidArgumentException) {
-        System.err.println(e.javaClass.name + ":" + target)
-        e.printStackTrace()
-      } catch (e: NoSuchElementException) {
-        System.err.println(e.javaClass.name + ":" + target)
-        e.printStackTrace()
-      }
-
-    }
-    throw RuntimeException("no elements")
-  }
-
-  private fun takeScreenShot(dist: String) {
-    val ss = (driver as TakesScreenshot).getScreenshotAs(OutputType.FILE)
-    ss.renameTo(File(dist))
-  }
 
   private lateinit var driver: WebDriver
   private var uploadFilePath: String? = null
   @Before
   fun before() {
-    println("browser=$browser")
-    if ("firefox" == browser) {
-      System.setProperty("webdriver.gecko.driver", "./drivers/geckodriver" + if (isWindows) ".exe" else "")
-      driver = FirefoxDriver()
-    } else if ("chrome" == browser) {
-      System.setProperty("webdriver.chrome.driver", "./drivers/chromedriver" + if (isWindows) ".exe" else "")
-      driver = ChromeDriver()
-    } else if ("safari" == browser) {
-      System.setProperty("webdriver.safari.noinstall", "true")
-      driver = SafariDriver()
-    } else if ("edge" == browser) {
-      System.setProperty("webdriver.edge.driver", "./drivers/MicrosoftWebDriver" + if (isWindows) ".exe" else "")
-      driver = EdgeDriver()
-    } else if ("ie" == browser) {
-      System.setProperty("webdriver.ie.driver", "./drivers/IEDriverServer.exe")
-      driver = InternetExplorerDriver()
-    } else {
-      throw RuntimeException(browser)
-    }
+    driver = TestBase.setupDriver(browser, isWindows)
     val path = System.getProperty("user.dir")
     //path = path.replaceAll("\\\\\\\\", "/");
     uploadFilePath = "$path/src/test/resources/"
@@ -449,7 +327,7 @@ function generateSeleniumCode(isKotlin = false) {
                     targets = new By[]{
                         ${targetPart}
                     }${EOL}
-                    findAndClick(driver, targets)${EOL}`;
+                    TestBase.findAndClick(driver, targets)${EOL}`;
                 }
                 if (delayInMs > 0) {
                     testcase += `Thread.sleep(${delayInMs})${EOL}\n`
@@ -485,9 +363,9 @@ function generateSeleniumCode(isKotlin = false) {
                 }
                 if (value.match(/C:\\\\fakepath\\\\/)) {
                     value = value.replace(/C:\\\\fakepath\\\\/g, "");
-                    testcase +=  `findAnyElement(driver, targets).sendKeys(uploadFilePath + \"${value}\")${EOL}`;
+                    testcase +=  `TestBase.findAnyElement(driver, targets).sendKeys(uploadFilePath + \"${value}\")${EOL}`;
                 } else {
-                    testcase +=  `findAnyElement(driver, targets).sendKeys(\"${value}\")${EOL}`;
+                    testcase +=  `TestBase.findAnyElement(driver, targets).sendKeys(\"${value}\")${EOL}`;
                 }
 
             }
@@ -506,7 +384,7 @@ function generateSeleniumCode(isKotlin = false) {
                         ${targetPart}
                     };
 
-                    verifyText = findAnyElement(driver, targets).getText();
+                    verifyText = TestBase.findAnyElement(driver, targets).getText();
                     assertEquals(verifyText, "${cmd.value}");\n`;
                 }
             }
@@ -602,5 +480,77 @@ document.addEventListener('DOMContentLoaded', () => {
             <textarea id="new_side" ></textarea>
         </section>
     </article>
+
+    <div>
+        <input type="text" value="TestBase"><br/>
+        <textarea style="width: 33%;height: 200px;" >import org.openqa.selenium.*;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.ie.InternetExplorerDriver;
+import org.openqa.selenium.safari.SafariDriver;
+
+import java.io.File;
+import java.io.IOException;
+
+public class TestBase {
+    public static WebDriver setupDriver(String browser, boolean isWindows) {
+        WebDriver driver;
+        if ("firefox".equals(browser)) {
+            System.setProperty("webdriver.gecko.driver", "./drivers/geckodriver" + (isWindows ? ".exe" : ""));
+            driver = new FirefoxDriver();
+        } else if ("chrome".equals(browser)) {
+            System.setProperty("webdriver.chrome.driver", "./drivers/chromedriver" + (isWindows ? ".exe" : ""));
+            driver = new ChromeDriver();
+        } else if ("safari".equals(browser)) {
+            System.setProperty("webdriver.safari.noinstall", "true");
+            driver = new SafariDriver();
+        } else if ("edge".equals(browser)) {
+            System.setProperty("webdriver.edge.driver", "./drivers/MicrosoftWebDriver" + (isWindows ? ".exe" : ""));
+            driver = new EdgeDriver();
+        } else if ("ie".equals(browser)) {
+            System.setProperty("webdriver.ie.driver", "./drivers/IEDriverServer.exe");
+            driver = new InternetExplorerDriver();
+        } else {
+            throw new RuntimeException(browser);
+        }
+        return driver;
+    }
+
+    public static WebElement findAnyElement(WebDriver driver, By[] targets) throws IOException, InterruptedException {
+        for(By target: targets) {
+            try {
+                WebElement element = driver.findElement(target);
+                if (element != null) {
+                    return element;
+                }
+            } catch (InvalidArgumentException | NoSuchElementException e) {
+                System.err.println(e.getClass().getName() + ":" + target);
+                e.printStackTrace();
+            }
+        }
+        throw new RuntimeException("no elements");
+    }
+    public static void findAndClick(WebDriver driver, By[] targets) throws IOException, InterruptedException {
+        for(By target: targets) {
+            try {
+                WebElement element = driver.findElement(target);
+                element.click();
+                return;
+            } catch (InvalidArgumentException | NoSuchElementException e) {
+                System.err.println(e.getClass().getName() + ":" + target);
+                e.printStackTrace();
+            }
+        }
+        throw new RuntimeException("no elements");
+    }
+
+    public void takeScreenShot(WebDriver driver ,String dist) {
+        File ss = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
+        ss.renameTo(new File(dist));
+    }
+}
+</textarea>
+    </div>
 </body>
 </html>
