@@ -316,6 +316,9 @@ function generateSeleniumCode(isKotlin = false) {
             const cmd = side.tests[i].commands[j];
             if (cmd.command === "click" || cmd.command === "clickAt") {
                 let targetPart = targetDecision(cmd.target, cmd.targets);
+                if (delayInMs > 0) {
+                    testcase += `Thread.sleep(${delayInMs})${EOL}\n`
+                }
                 if (isKotlin) {
                     testcase += `
                     targets = arrayOf<By>(
@@ -328,9 +331,6 @@ function generateSeleniumCode(isKotlin = false) {
                         ${targetPart}
                     }${EOL}
                     TestBase.findAndClick(driver, targets)${EOL}`;
-                }
-                if (delayInMs > 0) {
-                    testcase += `Thread.sleep(${delayInMs})${EOL}\n`
                 }
             }
             if (cmd.command === "open") {
@@ -370,6 +370,9 @@ function generateSeleniumCode(isKotlin = false) {
 
             }
             if (cmd.command === "verifyText") {
+                if (delayInMs > 0) {
+                    testcase += `Thread.sleep(${delayInMs})${EOL}`
+                }
                 let targetPart = targetDecision(cmd.target, cmd.targets);
                 if (isKotlin) {
                     testcase += `
@@ -542,7 +545,7 @@ public class TestBase {
                 e.printStackTrace();
             }
         }
-        throw new RuntimeException("no elements");
+        //throw new RuntimeException("no elements");
     }
 
     public void takeScreenShot(WebDriver driver ,String dist) {
