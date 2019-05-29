@@ -494,7 +494,6 @@ import org.openqa.selenium.ie.InternetExplorerDriver;
 import org.openqa.selenium.safari.SafariDriver;
 
 import java.io.File;
-import java.io.IOException;
 
 public class TestBase {
     public static WebDriver setupDriver(String browser, boolean isWindows) {
@@ -520,7 +519,7 @@ public class TestBase {
         return driver;
     }
 
-    public static WebElement findAnyElement(WebDriver driver, By[] targets) throws IOException, InterruptedException {
+    public static WebElement findAnyElement(WebDriver driver, By[] targets) {
         for(By target: targets) {
             try {
                 WebElement element = driver.findElement(target);
@@ -534,13 +533,13 @@ public class TestBase {
         }
         throw new RuntimeException("no elements");
     }
-    public static void findAndClick(WebDriver driver, By[] targets) throws IOException, InterruptedException {
+    public static void findAndClick(WebDriver driver, By[] targets) {
         for(By target: targets) {
             try {
                 WebElement element = driver.findElement(target);
                 element.click();
                 return;
-            } catch (InvalidArgumentException | NoSuchElementException e) {
+            } catch (InvalidArgumentException | NoSuchElementException | ElementClickInterceptedException e) {
                 System.err.println(e.getClass().getName() + ":" + target);
                 e.printStackTrace();
             }
