@@ -115,6 +115,7 @@ import static org.openqa.selenium.By.*;
 
 import java.io.IOException;
 import java.util.Arrays;
+import static com.github.horitaku1124.selenium_enhance.TestBase.*;
 
 
 @RunWith(value = Parameterized.class)
@@ -144,10 +145,12 @@ public class __CLASS_NAME__ {
     private String uploadFilePath;
     @Before
     public void before() {
-        driver = TestBase.setupDriver(browser, isWindows);
+        driver = setupDriver(browser, isWindows);
         String path = System.getProperty("user.dir");
         //path = path.replaceAll("\\\\\\\\", "/");
         uploadFilePath = path + "/src/test/resources/";
+
+        loginIfNeed(driver, BASE_URL);
     }
     @After
     public void after() {
@@ -173,8 +176,7 @@ import org.openqa.selenium.*
 import org.openqa.selenium.By.*
 
 import java.util.Arrays
-import TestBase.findAndClick
-import TestBase.findAnyElement
+import com.github.horitaku1124.selenium_enhance.TestBase.*
 
 
 @RunWith(value = Parameterized::class)
@@ -203,10 +205,12 @@ class __CLASS_NAME__(private val browser: String) {
   private var uploadFilePath: String? = null
   @Before
   fun before() {
-    driver = TestBase.setupDriver(browser, isWindows)
+    driver = setupDriver(browser, isWindows)
     val path = System.getProperty("user.dir")
     //path = path.replaceAll("\\\\\\\\", "/");
     uploadFilePath = "$path/src/test/resources/"
+
+    loginIfNeed(driver, BASE_URL)
   }
 
   @After
@@ -321,7 +325,7 @@ function generateSeleniumCode(isKotlin = false) {
                 }
                 if (isKotlin) {
                     testcase += `
-                    targets = arrayOf<By>(
+                    targets = arrayOf(
                         ${targetPart}
                     )${EOL}
                     findAndClick(driver, targets)${EOL}`;
@@ -330,7 +334,7 @@ function generateSeleniumCode(isKotlin = false) {
                     targets = new By[]{
                         ${targetPart}
                     }${EOL}
-                    TestBase.findAndClick(driver, targets)${EOL}`;
+                    findAndClick(driver, targets)${EOL}`;
                 }
             }
             if (cmd.command === "open") {
@@ -363,9 +367,9 @@ function generateSeleniumCode(isKotlin = false) {
                 }
                 if (value.match(/C:\\\\fakepath\\\\/)) {
                     value = value.replace(/C:\\\\fakepath\\\\/g, "");
-                    testcase +=  `TestBase.findAnyElement(driver, targets).sendKeys(uploadFilePath + \"${value}\")${EOL}`;
+                    testcase +=  `findAnyElement(driver, targets).sendKeys(uploadFilePath + \"${value}\")${EOL}`;
                 } else {
-                    testcase +=  `TestBase.findAnyElement(driver, targets).sendKeys(\"${value}\")${EOL}`;
+                    testcase +=  `findAnyElement(driver, targets).sendKeys(\"${value}\")${EOL}`;
                 }
 
             }
@@ -387,7 +391,7 @@ function generateSeleniumCode(isKotlin = false) {
                         ${targetPart}
                     };
 
-                    verifyText = TestBase.findAnyElement(driver, targets).getText();
+                    verifyText = findAnyElement(driver, targets).getText();
                     assertEquals(verifyText, "${cmd.value}");\n`;
                 }
             }
@@ -485,8 +489,11 @@ document.addEventListener('DOMContentLoaded', () => {
     </article>
 
     <div>
-        <input type="text" value="TestBase"><br/>
-        <textarea style="width: 33%;height: 200px;" >import org.openqa.selenium.*;
+        <input type="text" value="com.github.horitaku1124.selenium_enhance    TestBase" style="width: 300px;"><br/>
+        <textarea style="width: 33%;height: 200px;" >
+package com.github.horitaku1124.selenium_enhance;
+
+import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
@@ -551,8 +558,12 @@ public class TestBase {
         File ss = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
         ss.renameTo(new File(dist));
     }
+    public static void loginIfNeed(WebDriver driver, String baseUrl) {
+
+    }
 }
 </textarea>
     </div>
+
 </body>
 </html>
