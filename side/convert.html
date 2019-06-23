@@ -175,7 +175,6 @@ import org.openqa.selenium.*
 
 import org.openqa.selenium.By.*
 
-import java.util.Arrays
 import com.github.horitaku1124.selenium_enhance.TestBase.*
 
 
@@ -185,7 +184,7 @@ class __CLASS_NAME__(private val browser: String) {
     @JvmStatic
     @Parameterized.Parameters(name = "Browser = {0}")
     fun data(): Iterable<Array<Any>> {
-      return Arrays.asList(
+      return listOf(
          __BROWSERS__
       )
     }
@@ -554,9 +553,12 @@ public class TestBase {
         //throw new RuntimeException("no elements");
     }
 
-    public void takeScreenShot(WebDriver driver ,String dist) {
+    public static void takeScreenShot(WebDriver driver, String dist) {
         File ss = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
-        ss.renameTo(new File(dist));
+        boolean result = ss.renameTo(new File(dist));
+        if (!result) {
+            throw new RuntimeException("failed to save to " + dist + " from " + ss);
+        }
     }
     public static void loginIfNeed(WebDriver driver, String baseUrl) {
 
