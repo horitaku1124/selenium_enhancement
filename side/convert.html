@@ -275,7 +275,8 @@ function generateSeleniumCode(isKotlin = false) {
             if (match) {
                 findCandidates.push(["xpath", match[1]]);
             } else if (match2) {
-                findCandidates.push(["css", match2[1]]);
+                let target = match2[1].replace(/\\/g, "\\\\");
+                findCandidates.push(["css", target]);
             } else if (match3) {
                 findCandidates.push(["id", match3[1]]);
             } else if (match4) {
@@ -293,7 +294,8 @@ function generateSeleniumCode(isKotlin = false) {
             if (match && kind === "xpath:idRelative") {
                 findCandidates.push(["xpath", match[1]]);
             } else if (match2 && kind === "css:finder") {
-                findCandidates.push(["css", match2[1]]);
+                let target = match2[1].replace(/\\/g, "\\\\");
+                findCandidates.push(["css", target]);
             } else if (match3) {
                 findCandidates.push(["id", match3[1]]);
             } else if (match4) {
