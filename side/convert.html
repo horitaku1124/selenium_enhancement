@@ -385,7 +385,7 @@ function generateSeleniumCode(isKotlin = false) {
                         ${targetPart}
                     )
                     verifyText = findAnyElement(driver, targets).text
-                    assertEquals(verifyText, "${cmd.value}")\n`;
+                    assertEquals("${cmd.value}", verifyText)\n`;
                 } else {
                     testcase += `
                     targets = new By[]{
@@ -393,7 +393,7 @@ function generateSeleniumCode(isKotlin = false) {
                     };
 
                     verifyText = findAnyElement(driver, targets).getText();
-                    assertEquals(verifyText, "${cmd.value}");\n`;
+                    assertEquals("${cmd.value}", verifyText);\n`;
                 }
             }
             if (cmd.command === "setWindowSize") {
