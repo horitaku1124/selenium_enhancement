@@ -396,7 +396,7 @@ function generateSeleniumCode(isKotlin = false) {
                     assertEquals("${cmd.value}", verifyText);\n`;
                 }
             }
-            if (cmd.command === "setWindowSize") {
+            if (cmd.command === "setWindowSize" && cmd.target !== '') {
                 let target = cmd.target.split("x");
                 const constructor = isKotlin ? "" : "new ";
                 testcase += indent + `driver.manage().window().setSize(${constructor} Dimension(${target.join(", ")}))${EOL}`;
