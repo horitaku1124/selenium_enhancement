@@ -516,6 +516,7 @@ public class TestBase {
             System.setProperty("webdriver.safari.noinstall", "true");
             driver = new SafariDriver();
         } else if ("edge".equals(browser)) {
+            System.setProperty("webdriver.edge.driver", (isWindows ? "C:\\Windows\\SysWOW64\\MicrosoftWebDriver.exe" : ""));
             System.setProperty("webdriver.edge.driver", "./drivers/MicrosoftWebDriver" + (isWindows ? ".exe" : ""));
             driver = new EdgeDriver();
         } else if ("ie".equals(browser)) {
