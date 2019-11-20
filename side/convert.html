@@ -252,7 +252,6 @@ function generateSeleniumCode(isKotlin = false) {
     let text = document.getElementById('side').value;
     let className = document.getElementById('class_name').value;
     let side = JSON.parse(text);
-    let projectName = side.name;
     let newSide = isKotlin ? selenuimBaseKotlin : seleniumBase;
     newSide = newSide.replace(/__URL__/, side.url);
     newSide = newSide.replace(/__CLASS_NAME__/g, className);
@@ -562,7 +561,14 @@ public class TestBase {
 
     public static void takeScreenShot(WebDriver driver, String dist) {
         File ss = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
-        boolean result = ss.renameTo(new File(dist));
+        File moveTo = new File(dist);
+        if (moveTo.exists() && moveTo.isFile()) {
+            boolean deleted = moveTo.delete();
+            if (!deleted) {
+                throw new RuntimeException("failed to delete => " + dist);
+            }
+        }
+        boolean result = ss.renameTo(moveTo);
         if (!result) {
             throw new RuntimeException("failed to save to " + dist + " from " + ss);
         }
