@@ -225,7 +225,7 @@ class __CLASS_NAME__(private val browser: String) {
 
 const seleniumTestCaseBase = `
     @Test
-    public void test__TESTNAME__() throws IOException, InterruptedException {
+    public void __TESTNAME__() throws IOException, InterruptedException {
         String verifyText = "";
         By[] targets = null;
 
@@ -237,7 +237,7 @@ __SCRIPTS__
 
 const seleniumTestCaseBaseKotlin = `
   @Test
-  fun test__TESTNAME__() {
+  fun __TESTNAME__() {
         var verifyText:String? = "";
         var targets:Array<By>? = null;
 
@@ -252,6 +252,7 @@ function generateSeleniumCode(isKotlin = false) {
     let text = document.getElementById('side').value;
     let className = document.getElementById('class_name').value;
     let side = JSON.parse(text);
+    let projectName = side.name;
     let newSide = isKotlin ? selenuimBaseKotlin : seleniumBase;
     newSide = newSide.replace(/__URL__/, side.url);
     newSide = newSide.replace(/__CLASS_NAME__/g, className);
@@ -316,6 +317,7 @@ function generateSeleniumCode(isKotlin = false) {
     let indent = "";
     for (let i = 0;i < side.tests.length;i++) {
         let testcase = "";
+        const testName = side.tests[i].name;
         for (let j = 0;j < side.tests[i].commands.length;j++) {
             indent = "        ";
             const cmd = side.tests[i].commands[j];
@@ -403,7 +405,7 @@ function generateSeleniumCode(isKotlin = false) {
             }
         }
         let testCase = isKotlin ? seleniumTestCaseBaseKotlin : seleniumTestCaseBase;
-        scripts += testCase.replace(/__SCRIPTS__/g, testcase).replace(/__TESTNAME__/, i);
+        scripts += testCase.replace(/__SCRIPTS__/g, testcase).replace(/__TESTNAME__/, testName);
     }
     newSide = newSide.replace(/__TESTCASES__/, scripts);
 
@@ -440,8 +442,10 @@ document.addEventListener('DOMContentLoaded', () => {
             let reader = new FileReader();
             reader.onload = txt => {
                 let text = txt.target.result.replace(/\n/g, "\r\n");
-                console.log(text);
+                // console.log(text);
                 document.getElementById('side').value = text;
+                let side = JSON.parse(text);
+                document.getElementById('class_name').value = side.name;
             };
             reader.readAsText(file, 'UTF-8');
         }
