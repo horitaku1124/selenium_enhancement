@@ -151,6 +151,8 @@ public class __CLASS_NAME__ {
         uploadFilePath = path + "/src/test/resources/";
 
         loginIfNeed(driver, BASE_URL);
+
+        __SET_DEFAULT_STATE__
     }
     @After
     public void after() {
@@ -210,6 +212,8 @@ class __CLASS_NAME__(private val browser: String) {
     uploadFilePath = "$path/src/test/resources/"
 
     loginIfNeed(driver, BASE_URL)
+
+    __SET_DEFAULT_STATE__
   }
 
   @After
@@ -253,6 +257,7 @@ function generateSeleniumCode(isKotlin = false) {
     let className = document.getElementById('class_name').value;
     let side = JSON.parse(text);
     let newSide = isKotlin ? selenuimBaseKotlin : seleniumBase;
+    const useDefaultWindowSize = document.getElementById('set_default_size').checked;
     newSide = newSide.replace(/__URL__/, side.url);
     newSide = newSide.replace(/__CLASS_NAME__/g, className);
     const EOL = isKotlin ? "\n" : ";\n";
@@ -404,9 +409,21 @@ function generateSeleniumCode(isKotlin = false) {
             }
         }
         let testCase = isKotlin ? seleniumTestCaseBaseKotlin : seleniumTestCaseBase;
-        scripts += testCase.replace(/__SCRIPTS__/g, testcase).replace(/__TESTNAME__/, testName);
+
+        scripts += testCase
+            .replace(/__SCRIPTS__/g, testcase)
+            .replace(/__TESTNAME__/, testName);
     }
-    newSide = newSide.replace(/__TESTCASES__/, scripts);
+    let setDefaultState = "";
+    if (useDefaultWindowSize) {
+        const default_window_width = document.getElementById('default_window_width').value;
+        const default_window_height = document.getElementById('default_window_height').value;
+        const constructor = isKotlin ? "" : "new ";
+        setDefaultState += indent + `driver.manage().window().setSize(${constructor} Dimension(${default_window_width},${default_window_height}))${EOL}`;
+    }
+    newSide = newSide
+        .replace(/__TESTCASES__/, scripts)
+        .replace(/__SET_DEFAULT_STATE__/, setDefaultState);
 
     document.getElementById('new_side').value = newSide;
 }
@@ -486,6 +503,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <li><label><input type="checkbox" name="browsers" value="safari" >Safari</label></li>
                 </ul>
             </div>
+            <input type="checkbox" id="set_default_size" ><label for="set_default_size">Use Default Window size</label>
+            <input id="default_window_width" type="number" min="100" value="1024" max="10000"> x <input id="default_window_height" type="number" min="100" value="768" max="10000">
         </section>
         <section class="output_box">
             <textarea id="new_side" ></textarea>
