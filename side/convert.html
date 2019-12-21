@@ -321,7 +321,7 @@ function generateSeleniumCode(isKotlin = false) {
     let indent = "";
     for (let i = 0;i < side.tests.length;i++) {
         let testcase = "";
-        const testName = side.tests[i].name;
+        const testName = side.tests[i].name.replace(/\s/g, "");
         for (let j = 0;j < side.tests[i].commands.length;j++) {
             indent = "        ";
             const cmd = side.tests[i].commands[j];
@@ -461,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // console.log(text);
                 document.getElementById('side').value = text;
                 let side = JSON.parse(text);
-                document.getElementById('class_name').value = side.name;
+                document.getElementById('class_name').value = side.name.replace(/ /g, "");
             };
             reader.readAsText(file, 'UTF-8');
         }
